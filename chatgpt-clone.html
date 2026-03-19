@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatGPT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Söhne:wght@300;400;500;600&family=Söhne+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-bg: #171717;
+      --main-bg: #212121;
+      --input-bg: #2f2f2f;
+      --text-primary: #ececec;
+      --text-secondary: #8e8ea0;
+      --text-muted: #6b6b7b;
+      --border: #3a3a3a;
+      --hover-bg: #2a2a2a;
+      --accent: #10a37f;
+      --sidebar-width: 260px;
+    }
+
+    body {
+      font-family: 'Söhne', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--main-bg);
+      color: var(--text-primary);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .sidebar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px 12px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .icon-btn:hover { background: var(--hover-bg); color: var(--text-primary); }
+
+    .new-chat-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+      font-family: inherit;
+      margin-bottom: 4px;
+    }
+    .new-chat-btn:hover { background: var(--hover-bg); }
+
+    .section-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 12px 12px 6px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .chat-list { flex: 1; overflow-y: auto; }
+    .chat-list::-webkit-scrollbar { width: 4px; }
+    .chat-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+
+    .chat-item {
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+    .chat-item:hover { background: var(--hover-bg); color: var(--text-primary); }
+    .chat-item.active { background: var(--hover-bg); color: var(--text-primary); }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+
+    .user-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+    .user-btn:hover { background: var(--hover-bg); }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c084fc, #818cf8);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; color: white; flex-shrink: 0;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .model-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .model-selector:hover { background: var(--hover-bg); }
+
+    .top-bar-right { display: flex; gap: 8px; }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 0;
+      overflow-y: auto;
+    }
+
+    .greeting {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 40px;
+      text-align: center;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── INPUT AREA ── */
+    .input-area {
+      width: 100%;
+      max-width: 720px;
+      padding: 0 16px 24px;
+      margin: 0 auto;
+    }
+
+    .input-wrapper {
+      background: var(--input-bg);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .input-wrapper:hover { border-color: rgba(255,255,255,0.15); }
+
+    /* THE KEY: transparent anchor covers the whole box */
+    .input-overlay-link {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      cursor: text;
+      border-radius: 18px;
+    }
+
+    .textarea-row {
+      display: flex;
+      align-items: flex-end;
+      padding: 14px 16px 10px;
+      gap: 8px;
+    }
+
+    .fake-textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-height: 24px;
+      max-height: 180px;
+      line-height: 1.6;
+      pointer-events: none; /* prevent typing — link handles click */
+    }
+
+    .fake-textarea::placeholder { color: var(--text-muted); }
+
+    .input-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 10px 10px;
+    }
+
+    .input-tools { display: flex; gap: 4px; }
+
+    .tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tool-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+
+    .send-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: #676767;
+      color: #1a1a1a;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .disclaimer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 12px 0 6px;
+    }
+
+    /* ── SUGGESTION CHIPS ── */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 680px;
+      margin-bottom: 36px;
+    }
+
+    .chip {
+      background: var(--input-bg);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 200px;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .chip:hover { background: #383838; color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+
+    .chip-icon { font-size: 18px; flex-shrink: 0; }
+
+    svg { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="logo-area">
+      <!-- ChatGPT logo SVG -->
+      <svg class="logo-icon" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835 9.964 9.964 0 0 0-6.496-3.108 10.079 10.079 0 0 0-10.855 4.835 9.965 9.965 0 0 0-6.498 3.55 10.079 10.079 0 0 0 1.263 13.066 9.964 9.964 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 6.498 3.108 10.079 10.079 0 0 0 10.855-4.835 9.965 9.965 0 0 0 6.498-3.55 10.079 10.079 0 0 0-1.265-13.067zm-17.351 24.025a7.48 7.48 0 0 1-4.798-1.735c.061-.033.168-.091.237-.134l7.964-4.6a1.294 1.294 0 0 0 .655-1.134V19.054l3.366 1.944a.12.12 0 0 1 .066.092v9.299a7.505 7.505 0 0 1-7.49 7.506zM4.27 33.461a7.471 7.471 0 0 1-.894-5.023c.06.036.162.099.237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103L14.377 36.6a7.504 7.504 0 0 1-10.107-3.139zm-1.167-17.556A7.471 7.471 0 0 1 7.02 11.97a62.87 62.87 0 0 0 .237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103L18.12 19.67a7.504 7.504 0 0 1-10.107-3.14 7.472 7.472 0 0 1-4.91.375zM30.1 26.88a1.294 1.294 0 0 0-.655-1.134l-9.724-5.614 3.367-1.944a.12.12 0 0 1 .114-.012l7.964 4.6a7.504 7.504 0 0 1-1.066 13.556v-9.452zm2.68-5.273c-.061-.036-.162-.099-.236-.141l-7.965-4.6a1.298 1.298 0 0 0-1.308 0l-9.723 5.614v-3.888a.12.12 0 0 1 .048-.103l7.193-4.151a7.504 7.504 0 0 1 11.99 7.269zm-21.063 6.929-3.367-1.944a.12.12 0 0 1-.065-.092v-9.299a7.504 7.504 0 0 1 12.3-5.756 62.237 62.237 0 0 0-.236.134l-7.965 4.6a1.294 1.294 0 0 0-.654 1.132l-.013 11.225zm1.829-3.943 4.33-2.501 4.332 2.5v4.999l-4.331 2.5-4.331-2.5V24.593z" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="sidebar-actions">
+      <button class="icon-btn" title="Search chats">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <button class="icon-btn" title="New chat">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="new-chat-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+    New chat
+  </button>
+
+  <div class="chat-list">
+    <div class="section-label">Today</div>
+    <div class="chat-item active">Financial newsletter draft</div>
+    <div class="chat-item">DBMS ER diagram notes</div>
+    <div class="chat-item">Gold NBFC analysis</div>
+    <div class="section-label">Yesterday</div>
+    <div class="chat-item">MicroStrategy BTC scenario</div>
+    <div class="chat-item">Geopolitical risk report</div>
+    <div class="chat-item">Technical Communication exam</div>
+    <div class="section-label">Previous 7 Days</div>
+    <div class="chat-item">Wealth Forward newsletter</div>
+    <div class="chat-item">Vedic astrology gold prices</div>
+    <div class="chat-item">Middle East oil analysis</div>
+    <div class="chat-item">MD Term 1 study plan</div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="user-btn">
+      <div class="avatar">I</div>
+      <span style="font-size:14px;">Ishan</span>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN PANEL -->
+<main class="main">
+  <div class="top-bar">
+    <button class="model-selector">
+      ChatGPT
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M6 9l6 6 6-6"/>
+      </svg>
+    </button>
+    <div class="top-bar-right">
+      <button class="icon-btn" title="Share">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="greeting">What can I help with?</div>
+
+    <!-- SUGGESTION CHIPS -->
+    <div class="suggestions">
+      <div class="chip">
+        <span class="chip-icon">✍️</span>
+        <span>Create a cover letter for a job application</span>
+      </div>
+      <div class="chip">
+        <span class="chip-icon">💡</span>
+        <span>Brainstorm startup ideas in fintech</span>
+      </div>
+      <div class="chip">
+        <span class="chip-icon">📊</span>
+        <span>Analyze market trends for 2025</span>
+      </div>
+      <div class="chip">
+        <span class="chip-icon">🧮</span>
+        <span>Explain compound interest simply</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT AREA -->
+  <div class="input-area">
+    <div class="input-wrapper">
+      <!-- Invisible anchor that covers the whole input box -->
+      <a class="input-overlay-link" href="https://chatgpt.com" target="_blank" rel="noopener noreferrer" aria-label="Open ChatGPT"></a>
+
+      <div class="textarea-row">
+        <textarea
+          class="fake-textarea"
+          placeholder="Message ChatGPT"
+          rows="1"
+          readonly
+        ></textarea>
+      </div>
+
+      <div class="input-bottom-row">
+        <div class="input-tools">
+          <button class="tool-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
+            Attach
+          </button>
+          <button class="tool-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>
+            </svg>
+            Search
+          </button>
+          <button class="tool-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            Reason
+          </button>
+        </div>
+        <button class="send-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ececec" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="disclaimer">
+      ChatGPT can make mistakes. Consider checking important information.
+    </div>
+  </div>
+</main>
+
+</body>
+</html>
